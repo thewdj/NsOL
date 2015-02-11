@@ -42,6 +42,10 @@
             // 
             // Launch
             // 
+            this.Launch.FlatAppearance.BorderColor = System.Drawing.Color.Black;
+            this.Launch.FlatAppearance.BorderSize = 0;
+            this.Launch.FlatAppearance.MouseDownBackColor = System.Drawing.Color.LightGray;
+            this.Launch.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gainsboro;
             this.Launch.Location = new System.Drawing.Point(25, 110);
             this.Launch.Margin = new System.Windows.Forms.Padding(1);
             this.Launch.Name = "Launch";
