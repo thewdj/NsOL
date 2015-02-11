@@ -89,6 +89,7 @@
     <Compile Include="EngineCore.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Game.cs" />
     <Compile Include="Launcher.cs">
       <SubType>Form</SubType>
     </Compile>

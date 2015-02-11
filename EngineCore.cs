@@ -351,21 +351,22 @@ namespace NsOL
                  * 弹幕生成需要继承这个类
                  * 此类需要实例化
                  */
-                private int ArrayNumA;
-                private int ArrayNumB;
-                private Bullet[,] Bullets;
-                private Bullet Player;
-                private Base.Point3D OriPlayer;
-                private Bullet CenterPos;
-                private double GameRange;
-                private int Graze, Miss;
-                Thread STGThread;
+                protected int ArrayNumA;
+                protected int ArrayNumB;
+                protected Bullet[,] Bullets;
+                protected Bullet Player;
+                protected Base.Point3D OriPlayer;
+                protected Bullet CenterPos;
+                protected double GameRange;
+                protected int Graze, Miss;
+                //Thread STGThread;
 
                 public STGCore(int ArrayNum1, int ArrayNum2, double CenterX, double CenterY, double CenterZ, double Range, double PlayerX, double PlayerY, double PlayerZ, double PlayerSize)
                 {
                     ArrayNumA = ArrayNum1;
                     ArrayNumB = ArrayNum2;
                     Bullets = new Bullet[ArrayNumA, ArrayNumB];
+                    InitBullet();
                     Player = new Bullet(-2);
                     Player.SetPosition(PlayerX, PlayerY, PlayerZ);
                     Player.SetScale(PlayerSize, PlayerSize, PlayerSize);
@@ -375,12 +376,11 @@ namespace NsOL
                     CenterPos.SetPosition(CenterX, CenterY, CenterZ);
                     GameRange = Range;
                     Graze = 0; Miss = 0;
-                    STGThread = new Thread(JudgeACtrl);
+                    //STGThread = new Thread(JudgeACtrl);
                 }
 
                 public void Run()
                 {
-                    InitBullet();
                     //STGThread.Start();
                 }
 
@@ -409,7 +409,7 @@ namespace NsOL
                     DrawBullet();
                 }
 
-                private void GenBullet()
+                protected virtual void GenBullet()
                 {
                     Base.Point3D TmpPoint;
                     for (int i = 0; i < ArrayNumA; i++)
@@ -417,26 +417,20 @@ namespace NsOL
                         {
                             if (!Bullets[i, j].IsEnabled)
                             {
-                                TmpPoint.x = Math.Cos(i) + i * Math.Cos(0.25 * j) + CenterPos.GetPosition().x;
+                                TmpPoint.x = CenterPos.GetPosition().x;
                                 TmpPoint.y = CenterPos.GetPosition().y;
-                                TmpPoint.z = Math.Sin(i) - i * Math.Sin(0.25 * j) + CenterPos.GetPosition().z;
-                                //TmpPoint.x = Math.Cos(i) + j * Math.Cos(0.25 * j) + CenterPos.GetPosition().x;
-                                //TmpPoint.y = CenterPos.GetPosition().y;
-                                //TmpPoint.z = Math.Sin(i) - j * Math.Sin(0.25 * j) + CenterPos.GetPosition().z;
+                                TmpPoint.z = CenterPos.GetPosition().z; 
                                 Bullets[i, j].SetPosition(TmpPoint);
                                 Bullets[i, j].SetScale(20, 20, 20);
                                 Bullets[i, j].IsEnabled = true;
                             }
-                            TmpPoint.x = (Bullets[i, j].GetPosition().x - CenterPos.GetPosition().x) / 50;
+                            TmpPoint.x = 0;
                             TmpPoint.y = 0;
-                            TmpPoint.z = (Bullets[i, j].GetPosition().z - CenterPos.GetPosition().z) / 50;
+                            TmpPoint.z = 0;
                             TmpPoint.x = Bullets[i, j].GetPosition().x + TmpPoint.x;
                             TmpPoint.y = Bullets[i, j].GetPosition().y + TmpPoint.y;
                             TmpPoint.z = Bullets[i, j].GetPosition().z + TmpPoint.z;
                             Bullets[i, j].SetPosition(TmpPoint);
-
-                            if (Base.Distance3D(Bullets[i, j].GetPosition(), CenterPos.GetPosition()) > GameRange)
-                                Bullets[i, j] = new Bullet(-2);
                         }
                 }
 
@@ -456,7 +450,7 @@ namespace NsOL
                             {
                                 if (!CenterPos.PreJudge(Bullets[i, j].GetPosition(), GameRange))
                                     Bullets[i, j] = new Bullet(-2);
-                            }  
+                            }
 
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
