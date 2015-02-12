@@ -82,7 +82,7 @@ namespace NsOL
             /* FPS绘制
              */
             FPSObj.Update();
-            EngineCore.DxCS.DrawString(Math.Round(FPSObj.GetFPS(), 2) + " fps", 1800, 1060, 20);
+            EngineCore.DxCS.DrawString(FPSObj.GetFPS().ToString("f2") + " fps", 1800, 1060, 20);
             FPSObj.WaitTime();
         }
 
@@ -93,19 +93,14 @@ namespace NsOL
              */
             Bullet.MainCircle(); 
             Bullet.GetInfo(1800, 1000);
-
+            //DebugCamera();
+            //RefLine();
         }
 
         private void DebugCamera()
         {
             /* 相机测试
              */
-            //float VValue = (float)Math.PI / 4f;
-            //float HValue = 0f;
-            //float TValue = 0f;
-            //float XValue = 960f;
-            //float YValue = 1035f;
-            //float ZValue = 150f;
 
             if (EngineCore.Base.GetKey(Keys.Q)) VValue += 0.01f;
             if (EngineCore.Base.GetKey(Keys.A)) VValue -= 0.01f;
