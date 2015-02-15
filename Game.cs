@@ -29,7 +29,7 @@ namespace NsOL
              */
             FPSObj = new EngineCore.Base.FPSCounter();
             Debug_Obj = new Debug();
-            Bullet = new Bullet01(15, 30, 960, 100, 960, 860, 960, 100, 200, 10);
+            Bullet = new Bullet01(20, 40, 960, 100, 960, 1260, 960, 100, 200, 10);
 
             /* 资源加载函数调用
              * 似乎必须要加载窗口后才能调用加载函数？
@@ -92,7 +92,7 @@ namespace NsOL
              * 其他的工作可以试试多线程
              */
             Bullet.MainCircle(); 
-            Bullet.GetInfo(1800, 1000);
+            Bullet.GetInfo(1750, 900);
             //DebugCamera();
             //RefLine();
         }

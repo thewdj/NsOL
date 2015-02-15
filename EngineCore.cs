@@ -255,7 +255,7 @@ namespace NsOL
              * 此类不可实例化
              */
 
-            public const int DivideNum = 32;
+            public const int DivideNum = 12;
 
             public const int JUDGE_GRAZE = 1;
             public const int JUDGE_MISS = 2;
@@ -358,7 +358,7 @@ namespace NsOL
                 protected Base.Point3D OriPlayer;
                 protected Bullet CenterPos;
                 protected double GameRange;
-                protected int Graze, Miss;
+                protected int Graze, Miss, Num;
                 //Thread STGThread;
 
                 public STGCore(int ArrayNum1, int ArrayNum2, double CenterX, double CenterY, double CenterZ, double Range, double PlayerX, double PlayerY, double PlayerZ, double PlayerSize)
@@ -393,6 +393,7 @@ namespace NsOL
                 {
                     DxCS.DrawString("Graze: " + Graze.ToString(), x, y, 20);
                     DxCS.DrawString("Miss:  " + Miss.ToString(), x, y + 25, 20);
+                    DxCS.DrawString("Num: " + Num.ToString(), x, y + 50, 20);
                 }
 
                 private void InitBullet()
@@ -419,7 +420,7 @@ namespace NsOL
                             {
                                 TmpPoint.x = CenterPos.GetPosition().x;
                                 TmpPoint.y = CenterPos.GetPosition().y;
-                                TmpPoint.z = CenterPos.GetPosition().z; 
+                                TmpPoint.z = CenterPos.GetPosition().z;
                                 Bullets[i, j].SetPosition(TmpPoint);
                                 Bullets[i, j].SetScale(20, 20, 20);
                                 Bullets[i, j].IsEnabled = true;
@@ -444,12 +445,14 @@ namespace NsOL
 
                 private void JudgeACtrl()
                 {
+                    Num = 0;
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
                             if (Bullets[i, j].IsEnabled)
                             {
                                 if (!CenterPos.PreJudge(Bullets[i, j].GetPosition(), GameRange))
                                     Bullets[i, j] = new Bullet(-2);
+                                Num++;
                             }
 
                     for (int i = 0; i < ArrayNumA; i++)

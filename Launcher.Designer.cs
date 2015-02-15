@@ -58,7 +58,7 @@
             // FullScreen
             // 
             this.FullScreen.AutoSize = true;
-            this.FullScreen.Location = new System.Drawing.Point(21, 90);
+            this.FullScreen.Location = new System.Drawing.Point(30, 90);
             this.FullScreen.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.FullScreen.Name = "FullScreen";
             this.FullScreen.Size = new System.Drawing.Size(84, 16);
@@ -74,7 +74,7 @@
             this.DisplayMode.Controls.Add(this.DMode3);
             this.DisplayMode.Controls.Add(this.DMode4);
             this.DisplayMode.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.DisplayMode.Location = new System.Drawing.Point(20, 19);
+            this.DisplayMode.Location = new System.Drawing.Point(25, 19);
             this.DisplayMode.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.DisplayMode.Name = "DisplayMode";
             this.DisplayMode.Size = new System.Drawing.Size(106, 70);
