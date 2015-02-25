@@ -41,9 +41,7 @@ namespace NsOL
 
             /* 相机设置相关
              */
-            DxLibDLL.DX.SetCameraPositionAndAngle(DxLibDLL.DX.VGet(960f, 1035f, -150f), (float)Math.PI / 4f, 0, 0);
-            DxLibDLL.DX.SetGlobalAmbientLight(DxLibDLL.DX.GetColorF(1f, 1f, 1f, 1f));
-            DxLibDLL.DX.SetLightDirection(DxLibDLL.DX.VGet(0f, 1f, -1f));
+            EngineCore.DxCS.Dx3DCamera();
 
 
         }

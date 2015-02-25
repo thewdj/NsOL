@@ -180,6 +180,13 @@ namespace NsOL
                 DX.ClearDrawScreen();
             }
 
+            public static void Dx3DCamera()
+            {
+                DX.SetCameraPositionAndAngle(DxLibDLL.DX.VGet(960f, 1035f, -150f), (float)Math.PI / 4f, 0, 0);
+                DX.SetGlobalAmbientLight(DxLibDLL.DX.GetColorF(1f, 1f, 1f, 1f));
+                DX.SetLightDirection(DxLibDLL.DX.VGet(0f, 1f, -1f));
+            }
+
             public static void DxWait(int msTime)
             {
                 /* 延时的函数
