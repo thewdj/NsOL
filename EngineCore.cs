@@ -256,6 +256,28 @@ namespace NsOL
             }
         }
 
+        public class GdiCS
+        {
+            /* GDI操作函数
+             * 此类不可实例化
+             */
+
+            public static int GenBulletTex(Brush BulletColor, int Width, int Height)
+            {
+                /* 弹幕图片生成
+                 */
+
+                Bitmap Pic = new Bitmap(Width, Height);
+                Graphics Gdi = Graphics.FromImage(Pic);
+                Rectangle Rect = new Rectangle(0, 0, Width, Height);
+                Gdi.FillPie(BulletColor, Rect, 0f, 360f);
+                Gdi.Dispose();
+                Pic.Save("Bullet.dat", System.Drawing.Imaging.ImageFormat.Png);
+                Pic.Dispose();
+                return DX.LoadGraph("Bullet.dat");
+            }
+        }
+
         public class STG
         {
             /* STG相关的数据结构和函数
@@ -269,6 +291,7 @@ namespace NsOL
             public const int JUDGE_AWAY = 3;
 
             public const int TEX_SPHERE = -2;
+            public const int TEX_CIRCLE = -1;
 
             public class Bullet
             {
@@ -346,7 +369,12 @@ namespace NsOL
 
                 public void Draw()
                 {
-                    if (TexPtr == -2) DxCS.DrawSphere(Position.x, Position.y, Position.z, Base.Average3D(Scale), DivideNum, 255, 255, 255, 0, 0, 0, true);
+                    if (TexPtr == TEX_SPHERE) DxCS.DrawSphere(Position.x, Position.y, Position.z, Base.Average3D(Scale), DivideNum, 255, 255, 255, 0, 0, 0, true);
+                    else
+                    {
+                        DX.DrawRotaGraphF((float)Position.x, (float)Position.z, 1, 0, TexPtr, 1);
+                        //DX.DrawPixel((int)(Position.x ), (int)(Position.z ), 0xFFFFFF);
+                    }
                 }
 
             }
@@ -360,29 +388,40 @@ namespace NsOL
                  */
                 protected int ArrayNumA;
                 protected int ArrayNumB;
-                protected Bullet[,] Bullets;
-                protected Bullet Player;
-                protected Base.Point3D OriPlayer;
-                protected Bullet CenterPos;
-                protected double GameRange;
-                protected int Graze, Miss, Num;
+                public Bullet[,] Bullets;
+                private static Bullet PlayerPos;
+                private static Base.Point3D OriPlayer;
+                protected static int Graze, Miss, Num;
+                public Bullet CenterPos;
+                public static double GameRange;
+                protected int DefaultTexture;
                 //Thread STGThread;
 
-                public STGCore(int ArrayNum1, int ArrayNum2, double CenterX, double CenterY, double CenterZ, double Range, double PlayerX, double PlayerY, double PlayerZ, double PlayerSize)
+                public STGCore(int ArrayNum1, int ArrayNum2, double CenterX, double CenterY, double CenterZ, double Range,
+                                                             double PlayerX, double PlayerY, double PlayerZ, double PlayerSize, double BulletSize, int DefaultTex)
                 {
                     ArrayNumA = ArrayNum1;
                     ArrayNumB = ArrayNum2;
                     Bullets = new Bullet[ArrayNumA, ArrayNumB];
+                    if (DefaultTex == TEX_CIRCLE)
+                    {
+                        PlayerPos = new Bullet(GdiCS.GenBulletTex(Brushes.White, (int)PlayerSize, (int)PlayerSize));
+                        DefaultTexture = GdiCS.GenBulletTex(Brushes.Red, (int)BulletSize, (int)BulletSize);
+                    }
+                    else
+                    {
+                        DefaultTexture = DefaultTex;
+                    }
                     InitBullet();
-                    Player = new Bullet(-2);
-                    Player.SetPosition(PlayerX, PlayerY, PlayerZ);
-                    Player.SetScale(PlayerSize, PlayerSize, PlayerSize);
-                    Player.IsEnabled = true;
-                    OriPlayer = Player.GetPosition();
+                    PlayerPos.SetPosition(PlayerX, PlayerY, PlayerZ);
+                    PlayerPos.SetScale(PlayerSize, PlayerSize, PlayerSize);
+                    PlayerPos.IsEnabled = true;
+                    OriPlayer = PlayerPos.GetPosition();
                     CenterPos = new Bullet();
                     CenterPos.SetPosition(CenterX, CenterY, CenterZ);
                     GameRange = Range;
                     Graze = 0; Miss = 0;
+
                     //STGThread = new Thread(JudgeACtrl);
                 }
 
@@ -403,17 +442,24 @@ namespace NsOL
                     DxCS.DrawString("Num: " + Num.ToString(), x, y + 50, 20);
                 }
 
+                public void GetInfo(int Graze, int Miss, int Num)
+                {
+                    Graze = STGCore.Graze;
+                    Miss = STGCore.Miss;
+                    Num = STGCore.Num;
+                }
+
                 private void InitBullet()
                 {
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
-                            Bullets[i, j] = new Bullet(-2);
+                            Bullets[i, j] = new Bullet(DefaultTexture);
                 }
 
                 public void MainCircle()
                 {
                     GenBullet();
-                    JudgeACtrl();
+                    JudgeBullet();
                     DrawBullet();
                 }
 
@@ -423,18 +469,37 @@ namespace NsOL
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
                         {
+                            //if (!Bullets[i, j].IsEnabled)
+                            //{
+                            //    TmpPoint.x = CenterPos.GetPosition().x;
+                            //    TmpPoint.y = CenterPos.GetPosition().y;
+                            //    TmpPoint.z = CenterPos.GetPosition().z;
+                            //    Bullets[i, j].SetPosition(TmpPoint);
+                            //    Bullets[i, j].SetScale(20, 20, 20);
+                            //    Bullets[i, j].IsEnabled = true;
+                            //}
+                            //TmpPoint.x = 0;
+                            //TmpPoint.y = 0;
+                            //TmpPoint.z = 0;
+                            //TmpPoint.x = Bullets[i, j].GetPosition().x + TmpPoint.x;
+                            //TmpPoint.y = Bullets[i, j].GetPosition().y + TmpPoint.y;
+                            //TmpPoint.z = Bullets[i, j].GetPosition().z + TmpPoint.z;
+                            //Bullets[i, j].SetPosition(TmpPoint);
                             if (!Bullets[i, j].IsEnabled)
                             {
-                                TmpPoint.x = CenterPos.GetPosition().x;
+                                TmpPoint.x = Math.Cos(i) + i * Math.Cos(0.25 * j) + CenterPos.GetPosition().x;
                                 TmpPoint.y = CenterPos.GetPosition().y;
-                                TmpPoint.z = CenterPos.GetPosition().z;
+                                TmpPoint.z = Math.Sin(i) - i * Math.Sin(0.25 * j) + CenterPos.GetPosition().z;
+                                //TmpPoint.x = Math.Cos(i) + j * Math.Cos(0.25 * j) + 960;
+                                //TmpPoint.y = CenterPos.GetPosition().y;
+                                //TmpPoint.z = Math.Sin(i) - j * Math.Sin(0.25 * j) + 540;
                                 Bullets[i, j].SetPosition(TmpPoint);
                                 Bullets[i, j].SetScale(20, 20, 20);
                                 Bullets[i, j].IsEnabled = true;
                             }
-                            TmpPoint.x = 0;
+                            TmpPoint.x = (Bullets[i, j].GetPosition().x - CenterPos.GetPosition().x) / 100;
                             TmpPoint.y = 0;
-                            TmpPoint.z = 0;
+                            TmpPoint.z = (Bullets[i, j].GetPosition().z - CenterPos.GetPosition().z) / 100;
                             TmpPoint.x = Bullets[i, j].GetPosition().x + TmpPoint.x;
                             TmpPoint.y = Bullets[i, j].GetPosition().y + TmpPoint.y;
                             TmpPoint.z = Bullets[i, j].GetPosition().z + TmpPoint.z;
@@ -447,61 +512,266 @@ namespace NsOL
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
                             if (Bullets[i, j].IsEnabled) Bullets[i, j].Draw();
-                    Player.Draw();
+                    DrawPlayer();
                 }
 
-                private void JudgeACtrl()
+                private static void DrawPlayer()
+                {
+                    PlayerPos.Draw();
+                }
+
+                private void JudgeBullet()
                 {
                     Num = 0;
                     for (int i = 0; i < ArrayNumA; i++)
                         for (int j = 0; j < ArrayNumB; j++)
                             if (Bullets[i, j].IsEnabled)
                             {
-                                if (!CenterPos.PreJudge(Bullets[i, j].GetPosition(), GameRange))
-                                    Bullets[i, j] = new Bullet(-2);
+                                if (Base.Distance3D(Bullets[i, j].GetPosition(), CenterPos.GetPosition()) > GameRange)
+                                    Bullets[i, j] = new Bullet(DefaultTexture);
+                                //if (!CenterPos.PreJudge(Bullets[i, j].GetPosition(), GameRange))
+                                //    Bullets[i, j] = new Bullet(DefaultTexture);
                                 Num++;
                             }
 
-                    for (int i = 0; i < ArrayNumA; i++)
-                        for (int j = 0; j < ArrayNumB; j++)
-                            if (Bullets[i, j].IsEnabled)
-                                if (Bullets[i, j].IsEnabled && Player.PreJudge(Bullets[i, j].GetPosition(), GameRange))
-                                {
-                                    if (Player.Judge(Bullets[i, j].GetPosition()) == JUDGE_AWAY && !Bullets[i, j].IsGrazed) Bullets[i, j].IsGrazed = true;
-                                    if (Player.Judge(Bullets[i, j].GetPosition()) == JUDGE_GRAZE && Bullets[i, j].IsGrazed)
-                                    {
-                                        Bullets[i, j].IsGrazed = false;
-                                        Graze++;
-                                    }
-                                    if (Player.Judge(Bullets[i, j].GetPosition()) == JUDGE_MISS)
-                                    {
-                                        Bullets[i, j] = new Bullet(-2);
-                                        Miss++;
-                                        Player.SetPosition(OriPlayer);
-                                    }
-                                }
+                    //for (int i = 0; i < ArrayNumA; i++)
+                    //    for (int j = 0; j < ArrayNumB; j++)
+                    //        if (Bullets[i, j].IsEnabled)
+                    //            if (Bullets[i, j].IsEnabled && PlayerPos.PreJudge(Bullets[i, j].GetPosition(), GameRange))
+                    //            {
+                    //                if (PlayerPos.Judge(Bullets[i, j].GetPosition()) == JUDGE_AWAY && !Bullets[i, j].IsGrazed) Bullets[i, j].IsGrazed = true;
+                    //                if (PlayerPos.Judge(Bullets[i, j].GetPosition()) == JUDGE_GRAZE && Bullets[i, j].IsGrazed)
+                    //                {
+                    //                    Bullets[i, j].IsGrazed = false;
+                    //                    Graze++;
+                    //                }
+                    //                if (PlayerPos.Judge(Bullets[i, j].GetPosition()) == JUDGE_MISS)
+                    //                {
+                    //                    Bullets[i, j] = new Bullet(DefaultTexture);
+                    //                    Miss++;
+                    //                    PlayerPos.SetPosition(OriPlayer);
+                    //                }
+                    //            }
+                }
 
+                public void Control()
+                {
                     Base.Point3D TmpPos;
-                    TmpPos = Player.GetPosition();
-                    if (Base.GetKey(Keys.ShiftKey))
+                    TmpPos = PlayerPos.GetPosition();
+                    if (DefaultTexture == TEX_SPHERE)
                     {
-                        if (Base.GetKey(Keys.Up)) TmpPos.z += 3;
-                        if (Base.GetKey(Keys.Down)) TmpPos.z -= 3;
-                        if (Base.GetKey(Keys.Left)) TmpPos.x -= 3;
-                        if (Base.GetKey(Keys.Right)) TmpPos.x += 3;
+                        if (Base.GetKey(Keys.ShiftKey))
+                        {
+                            if (Base.GetKey(Keys.Up)) TmpPos.z += 3;
+                            if (Base.GetKey(Keys.Down)) TmpPos.z -= 3;
+                            if (Base.GetKey(Keys.Left)) TmpPos.x -= 3;
+                            if (Base.GetKey(Keys.Right)) TmpPos.x += 3;
+                        }
+                        else
+                        {
+                            if (Base.GetKey(Keys.Up)) TmpPos.z += 5;
+                            if (Base.GetKey(Keys.Down)) TmpPos.z -= 5;
+                            if (Base.GetKey(Keys.Left)) TmpPos.x -= 5;
+                            if (Base.GetKey(Keys.Right)) TmpPos.x += 5;
+                        }
                     }
                     else
                     {
-                        if (Base.GetKey(Keys.Up)) TmpPos.z += 5;
-                        if (Base.GetKey(Keys.Down)) TmpPos.z -= 5;
-                        if (Base.GetKey(Keys.Left)) TmpPos.x -= 5;
-                        if (Base.GetKey(Keys.Right)) TmpPos.x += 5;
+                        if (Base.GetKey(Keys.ShiftKey))
+                        {
+                            if (Base.GetKey(Keys.Up)) TmpPos.z -= 2;
+                            if (Base.GetKey(Keys.Down)) TmpPos.z += 2;
+                            if (Base.GetKey(Keys.Left)) TmpPos.x -= 2;
+                            if (Base.GetKey(Keys.Right)) TmpPos.x += 2;
+                        }
+                        else
+                        {
+                            if (Base.GetKey(Keys.Up)) TmpPos.z -= 5;
+                            if (Base.GetKey(Keys.Down)) TmpPos.z += 5;
+                            if (Base.GetKey(Keys.Left)) TmpPos.x -= 5;
+                            if (Base.GetKey(Keys.Right)) TmpPos.x += 5;
+                        }
                     }
 
-                    if (CenterPos.PreJudge(TmpPos, GameRange)) Player.SetPosition(TmpPos);
+
+                    if (TmpPos.x > 0 & TmpPos.x < 1920 & TmpPos.z > 0 & TmpPos.z < 1080) PlayerPos.SetPosition(TmpPos);
                 }
             }
 
+            public class Enemy
+            {
+                public STGCore BulletGen;
+                public STGCore ObjGen;
+                protected int Life;
+                protected int[] Texture;
+
+                public Enemy(int BulletArray1, int BulletArray2, int ObjArray1, int ObjArray2, int EnemyLife, double Range, int DefaultTex)
+                {
+                    BulletGen = new STGCore(BulletArray1, BulletArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    ObjGen = new STGCore(ObjArray1, ObjArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    Life = EnemyLife;
+                    Texture = new int[128];
+                    Texture[0] = DefaultTex;
+                }
+
+                public void MainCircle()
+                {
+                    BulletGen.MainCircle();
+                    //ObjGen.MainCircle();
+                }
+
+            }
+
+            public class Boss
+            {
+                public STGCore BulletGen;
+                public STGCore ObjGen;
+                protected int Life;
+                protected int[] Texture;
+
+                public Boss(int BulletArray1, int BulletArray2, int ObjArray1, int ObjArray2, int BossLife, double Range, int DefaultTex)
+                {
+                    BulletGen = new STGCore(BulletArray1, BulletArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    ObjGen = new STGCore(ObjArray1, ObjArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    Life = BossLife;
+                    Texture = new int[128];
+                    Texture[0] = DefaultTex;
+                }
+
+                public void MainCircle()
+                {
+                    BulletGen.MainCircle();
+                    //ObjGen.MainCircle();
+                }
+
+            }
+
+            public class Player
+            {
+                public STGCore BulletGen;
+                public STGCore ObjGen;
+                protected int Life, Bomb, Graze;
+                protected long Score;
+                protected object Task;
+                protected object Objs;
+                protected int[] Texture;
+
+                public Player(int BulletArray1, int BulletArray2, int ObjArray1, int ObjArray2, int PlayerLife, int PlayerBomb, double Range, int DefaultTex)
+                {
+                    BulletGen = new STGCore(BulletArray1, BulletArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    ObjGen = new STGCore(ObjArray1, ObjArray2, 0, 0, 0, Range, 0, 0, 0, 10, 5, DefaultTex);
+                    Life = PlayerLife;
+                    Bomb = PlayerBomb;
+                    Graze = 0;
+                    Texture = new int[128];
+                    Texture[0] = DefaultTex;
+                }
+
+                public void GetInfo()
+                {
+                    int tmp = 0;
+                    BulletGen.GetInfo(Graze, Bomb, tmp);
+                }
+
+                private void MovePlayer()
+                {
+                    BulletGen.Control();
+                }
+
+                public void MainCircle()
+                {
+                    BulletGen.MainCircle();
+                    //ObjGen.MainCircle();
+                    MovePlayer();
+                }
+
+            }
+
+
+            public class SpellCard
+            {
+                protected Enemy[,] Enemies;
+                protected Boss[] Bosses;
+                protected Player[] Players;
+                protected Bullet Center;
+                protected double Range;
+
+                public SpellCard(int EnemyArray1, int EnemyArray2, int EnemyBulletArray1, int EnemyBulletArray2, int EnemyObjArray1, int EnemyObjArray2, int EnemyLife,
+                                                  int BossArray, int BossBulletArray1, int BossBulletArray2, int BossObjArray1, int BossObjArray2, int BossLife,
+                                                  int PlayerArray, int PlayerBulletArray1, int PlayerBulletArray2, int PlayerObjArray1, int PlayerObjArray2, int PlayerLife, int PlayerBomb,
+                                 double CenterX, double CenterY, double CenterZ, double Range, int DefaultTex)
+                {
+                    Enemies = new Enemy[EnemyArray1, EnemyArray2];
+                    Bosses = new Boss[BossArray];
+                    Players = new Player[PlayerArray];
+
+                    Center = new Bullet();
+                    Center.SetPosition(CenterX, CenterY, CenterZ);
+                    this.Range = Range;
+
+                    for (int i = 0; i < EnemyArray1; i++)
+                        for (int j = 0; j < EnemyArray2; j++)
+                            Enemies[i, j] = new Enemy(EnemyBulletArray1, EnemyBulletArray2, EnemyObjArray1, EnemyObjArray2, EnemyLife, Range, DefaultTex);
+                    for (int i = 0; i < BossArray; i++)
+                        Bosses[i] = new Boss(BossBulletArray1, BossBulletArray2, BossObjArray1, BossObjArray2, BossLife, Range, DefaultTex);
+                    for (int i = 0; i < PlayerArray; i++)
+                    {
+                        Players[i] = new Player(PlayerBulletArray1, PlayerBulletArray2, PlayerObjArray1, PlayerObjArray2, PlayerLife, PlayerBomb, Range, DefaultTex);
+                        Players[i].BulletGen.CenterPos = Center;
+                    }
+
+                    STGCore.GameRange = Range;
+
+                }
+
+                public void MainCircle()
+                {
+                    EnemyMove();
+                    for (int i = 0; i < Enemies.GetUpperBound(0); i++)
+                        for (int j = 0; j < Enemies.GetUpperBound(1); j++)
+                            Enemies[i, j].MainCircle();
+
+                    for (int i = 0; i < Bosses.GetUpperBound(0); i++)
+                        Bosses[i].MainCircle();
+
+                    for (int i = 0; i < Players.GetUpperBound(0); i++)
+                        Players[i].MainCircle();
+                }
+
+                private void EnemyMove()
+                {
+                    Base.Point3D TmpPoint;
+                    for (int i = 0; i < Enemies.GetUpperBound(0); i++)
+                        for (int j = 0; j < Enemies.GetUpperBound(1); j++)
+                        {
+                            if (!Enemies[i, j].BulletGen.CenterPos.IsEnabled)
+                            {
+                                //TmpPoint.x = Math.Cos(i) + i * Math.Cos(0.25 * j) + Center.GetPosition().x;
+                                //TmpPoint.y = Center.GetPosition().y;
+                                //TmpPoint.z = Math.Sin(i) - i * Math.Sin(0.25 * j) + Center.GetPosition().z;
+
+                                TmpPoint.x = (i + 1)  * Math.Cos(2 * Math.PI / 10 + j) + Center.GetPosition().x;
+                                TmpPoint.y = Center.GetPosition().y;
+                                TmpPoint.z = (i + 1)  * Math.Sin(2 * Math.PI / 10 + j) + Center.GetPosition().z;
+
+                                //TmpPoint.x = Math.Cos(i) + j * Math.Cos(0.25 * j) + Center.GetPosition().x;
+                                //TmpPoint.y = Center.GetPosition().y;
+                                //TmpPoint.z = Math.Sin(i) - j * Math.Sin(0.25 * j) + Center.GetPosition().z;
+                                Enemies[i, j].BulletGen.CenterPos.SetPosition(TmpPoint);
+                                Enemies[i, j].BulletGen.CenterPos.SetScale(20, 20, 20);
+                                Enemies[i, j].BulletGen.CenterPos.IsEnabled = true;
+                            }
+                            TmpPoint.x = (Center.GetPosition().x - Enemies[i, j].BulletGen.CenterPos.GetPosition().x) / 100;
+                            TmpPoint.y = 0;
+                            TmpPoint.z = (Center.GetPosition().z - Enemies[i, j].BulletGen.CenterPos.GetPosition().z) / 100;
+                            TmpPoint.x = Enemies[i, j].BulletGen.CenterPos.GetPosition().x + TmpPoint.x;
+                            TmpPoint.y = Enemies[i, j].BulletGen.CenterPos.GetPosition().y + TmpPoint.y;
+                            TmpPoint.z = Enemies[i, j].BulletGen.CenterPos.GetPosition().z + TmpPoint.z;
+                            if (Center.PreJudge(TmpPoint, Range))
+                                Enemies[i, j].BulletGen.CenterPos.SetPosition(TmpPoint);
+                        }
+                }
+            }
         }
     }
 }
